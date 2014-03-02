@@ -7,20 +7,19 @@
 #  - build with pulseaudio as sound server, not jack (x86 asm)
 
 pkgname=snd
-pkgver=13.9
+pkgver=14.3
 pkgrel=1
 pkgdesc="An advanced sound editor"
 arch=('i686' 'x86_64')
 url="http://ccrma.stanford.edu/software/snd/"
-license=('custom')
+license=('custom:free')
 depends=('pulseaudio' 'gamin' 'gsl' 'fftw' 'gtk2' 'libmpc')
 makedepends=('ladspa' 'wavpack' 'flac' 'speex' 'gmp'
              'timidity++' 'mpg123' 'vorbis-tools')
 optdepends=('wavpack' 'flac' 'speex' 'mpg123'
             'timidity++' 'vorbis-tools')
-install=$pkgname.install
 source=("ftp://ccrma-ftp.stanford.edu/pub/Lisp/$pkgname-$pkgver.tar.gz")
-md5sums=('acceab2d1e30720640aca54d4b68d45b')
+md5sums=('817e1da8fe471e817b1ac4b1203925cd')
 
 build() {
   cd "$srcdir/$pkgname-$pkgver"

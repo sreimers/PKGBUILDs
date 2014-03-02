@@ -5,17 +5,18 @@
 #  - disable soundtouch extension on v5, currently broken
 
 pkgname=gst-plugins-bad
-pkgver=1.2.0
+pkgver=1.2.3
 pkgrel=1
 pkgdesc="GStreamer Multimedia Framework Bad Plugins"
 arch=('i686' 'x86_64')
 license=('LGPL')
 url="http://gstreamer.freedesktop.org/"
-depends=('mjpegtools' 'gst-plugins-base-libs' 'curl' 'chromaprint' 'libmms' 'faad2' 'mpg123' 'faac' 'celt' 'libdca' 'soundtouch' 'spandsp' 'libdvdnav' 'libmodplug' 'libgme' 'opus' 'wayland' 'neon' 'libofa' 'fluidsynth' 'openjpeg' 'libwebp' 'libsrtp' 'gnutls')
-makedepends=('schroedinger' 'libexif' 'libdvdread' 'libvdpau' 'libmpeg2' 'python' 'valgrind' 'wildmidi')
+depends=('mjpegtools' 'gst-plugins-base-libs' 'curl' 'chromaprint' 'libmms' 'faad2' 'mpg123' 'faac' 'celt' 'libdca' 'soundtouch' 'spandsp' 'libdvdnav' 'libmodplug' 'libgme' 'opus' 'wayland' 'neon' 'libofa' 'fluidsynth' 'openjpeg' 'libwebp' 'libsrtp' 'gnutls' 'wildmidi')
+makedepends=('schroedinger' 'libexif' 'libdvdread' 'libvdpau' 'libmpeg2' 'python' 'valgrind' 'wildmidi' 'librsvg'
+             'gobject-introspection' 'gtk-doc')
 options=(!libtool !emptydirs)
 source=(${url}/src/$pkgname/$pkgname-$pkgver.tar.xz)
-sha256sums=('a12fac6c106a7e4ae8bb2c7da508688d7db532b818319df2202f497cbd930afa')
+sha256sums=('595d7911a9e6207dea37200587724bdbf841b81a5eb0730118be36976684278c')
 
 build() {
   cd $pkgname-$pkgver
@@ -23,7 +24,7 @@ build() {
   [[ $CARCH == 'arm' ]] && CONFIG="--disable-soundtouch"
 
   ./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
-    --disable-static --enable-experimental \
+    --disable-static --enable-experimental --enable-gtk-doc \
     --with-package-name="GStreamer Bad Plugins (Arch Linux)" \
     --with-package-origin="http://www.archlinux.org/" \
     --with-gtk=3.0 $CONFIG

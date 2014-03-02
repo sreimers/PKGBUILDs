@@ -5,9 +5,10 @@ After = remote-fs.target
 [Service]
 User = xbmc
 Group = xbmc
+PAMName=login
 Type = simple
-ExecStart = /usr/bin/xinit /usr/bin/xbmc-standalone -- :0 -nolisten tcp
-Restart = always
+ExecStart = /usr/bin/xinit /usr/bin/dbus-launch /usr/bin/xbmc-standalone -l /run/lirc/lircd -- :0 -nolisten tcp
+Restart = on-abort
 
 [Install]
 WantedBy = multi-user.target

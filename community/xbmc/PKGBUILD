@@ -14,45 +14,56 @@ buildarch=4
 _prefix=/usr
 
 pkgname=xbmc
-pkgver=12.2
-pkgrel=5
+pkgver=12.3
+_codename=Frodo
+pkgrel=10
 pkgdesc="A software media player and entertainment hub for digital media"
 arch=('i686' 'x86_64')
 url="http://xbmc.org"
 license=('GPL' 'custom')
-depends=('libpulse' 'hicolor-icon-theme' 'fribidi' 'lzo2' 'smbclient' 'libtiff' 'libva'
+depends=('hicolor-icon-theme' 'fribidi' 'lzo2' 'smbclient' 'libtiff' 'libva'
 	 'libpng' 'libcdio' 'yajl' 'libmariadbclient' 'libjpeg-turbo' 'libsamplerate'
 	 'glew' 'libssh' 'libmicrohttpd' 'libxrandr' 'sdl_mixer' 'sdl_image' 'python2'
 	 'libass' 'libmpeg2' 'libmad' 'libmodplug' 'jasper' 'rtmpdump' 'unzip' 'mesa-demos'
 	 'xorg-xdpyinfo' 'libbluray' 'libnfs' 'afpfs-ng' 'libshairport' 'avahi' 'bluez-libs' 'glu'
-	 'tinyxml' 'taglib')
+	 'tinyxml' 'taglib' 'ffmpeg-compat')
 makedepends=('boost' 'cmake' 'gperf' 'nasm' 'libxinerama' 'zip' 'libcec'
 	     'udisks' 'upower' 'mesa' 'doxygen' 'swig' 'java-environment')
 optdepends=('libcec: support for Pulse-Eight USB-CEC adapter'
-	    'pulseaudio: pulseaudio support'
 	    'lirc: remote controller support'
 	    'udisks: automount external drives'
-	    'upower: used to trigger suspend functionality'
+	    'upower: used to trigger power management functionality'
 	    'unrar: access compressed files without unpacking them'
 	    'xorg-xinit: autostart xbmc')
 install="${pkgname}.install"
 source=("http://mirrors.xbmc.org/releases/source/xbmc-$pkgver.tar.gz"
-	"xbmc.service")
-md5sums=('489f3877decae4e265ece54f9eaef0ba'
-         '76fae229ebc3bcfaab7e7f27e4fb51f5')
+	"xbmc.service"
+	"polkit.rules"
+	"libass.patch::https://bugs.archlinux.org/index.php?getfile=11285")
+md5sums=('7ae385ebf8e5cfcb917393235e6efbdb'
+         'a32b879d010a0060a8057bb8cb2f4c9e'
+         '02f7951824ee13103344f36009c0ef2a'
+         '7fd6399d2ffbdf06b724f0cc2efa0784')
 
-build() {
-  cd "${srcdir}/xbmc-$pkgver"
+prepare() {
+  cd "${srcdir}/xbmc-$pkgver-$_codename"
+
+  patch -p0 <$srcdir/libass.patch
 
   # fix lsb_release dependency
   sed -i -e 's:/usr/bin/lsb_release -d:cat /etc/arch-release:' xbmc/utils/SystemInfo.cpp
   sed -i -e 's:#include <libsmbclient.h>:#include <samba-4.0/libsmbclient.h>:' xbmc/filesystem/{SmbFile,SMBDirectory}.cpp
+}
+
+build() {
+  cd "${srcdir}/xbmc-$pkgver-$_codename"
 
   # Bootstrapping XBMC
   ./bootstrap
 
   # Configuring XBMC
   export PYTHON_VERSION=2  # external python v2
+  export PKG_CONFIG_PATH=/usr/lib/ffmpeg-compat/pkgconfig:$PKG_CONFIG_PATH
   ./configure --prefix=$_prefix --exec-prefix=$_prefix \
     --disable-debug \
     --enable-optimizations \
@@ -66,7 +77,6 @@ build() {
     --enable-rsxs \
     --enable-projectm \
     --enable-x11 \
-    --enable-pulse \
     --enable-rtmp \
     --enable-samba \
     --enable-nfs \
@@ -85,14 +95,14 @@ build() {
     --enable-libusb \
     --enable-libcec \
     --enable-external-libraries \
-    --disable-external-ffmpeg \
+    --enable-external-ffmpeg \
     CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}"
   # Now (finally) build
   make
 }
 
 package() {
-  cd "${srcdir}/xbmc-$pkgver"
+  cd "${srcdir}/xbmc-$pkgver-$_codename"
   # Running make install
   make DESTDIR="${pkgdir}" install
 
@@ -104,9 +114,9 @@ package() {
   sed -i -e "s/lsb_release -a 2> \/dev\/null | sed -e 's\/\^\/    \/'/cat \/etc\/arch-release/g" "${pkgdir}${_prefix}/bin/xbmc"
 
   # Tools
-  install -D -m 0755 "${srcdir}/xbmc-$pkgver/xbmc-xrandr" "${pkgdir}${_prefix}/share/xbmc/xbmc-xrandr"
-# cheap, not there after configure.
-#  install -D -m 0755 "${srcdir}/xbmc-$pkgver/tools/TexturePacker/TexturePacker" "${pkgdir}${_prefix}/share/xbmc/"
+  install -D -m 0755 "${srcdir}/xbmc-$pkgver-$_codename/xbmc-xrandr" "${pkgdir}${_prefix}/share/xbmc/xbmc-xrandr"
+  # Stupid TexturePacker does not exist.
+  #install -D -m 0755 "${srcdir}/xbmc-$pkgver-$_codename/tools/TexturePacker/TexturePacker" "${pkgdir}${_prefix}/share/xbmc/"
 
   # Licenses
   install -d -m 0755 "${pkgdir}${_prefix}/share/licenses/${pkgname}"
@@ -114,6 +124,7 @@ package() {
     mv "${pkgdir}${_prefix}/share/doc/xbmc/${licensef}" "${pkgdir}${_prefix}/share/licenses/${pkgname}"
   done
 
-  # systemd stuff
   install -Dm0644 $srcdir/xbmc.service $pkgdir/usr/lib/systemd/system/xbmc.service
+  install -Dm0644 $srcdir/polkit.rules $pkgdir/usr/share/polkit-1/rules.d/10-xbmc.rules
+  chmod 0700 $pkgdir/usr/share/polkit-1/rules.d/
 }

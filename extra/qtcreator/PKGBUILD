@@ -1,0 +1,66 @@
+# $Id: PKGBUILD 86795 2013-03-22 10:46:14Z svenstaro $
+# Maintainer: Sven-Hendrik Haase <sh@lutzhaase.com>
+# Contributor: Imanol Celaya <ornitorrincos@archlinux-es.org>
+# Contributor: Lukas Jirkovsky <l.jirkovsky@gmail.com>
+# Contributor: Dan Vratil <progdan@progdansoft.com>
+# Contributor: thotypous <matiasΘarchlinux-br·org>
+# Contributor: delor <bartekpiech gmail com>
+
+# ALARM: Kevin Mihelich <kevin@archlinuxarm.org>
+#  - patch to upgrade included botan version so it builds on ARM
+
+pkgname=qtcreator
+pkgver=3.0.1
+_pkgver=3.0.1
+pkgrel=1
+pkgdesc='Lightweight, cross-platform integrated development environment'
+arch=('i686' 'x86_64')
+url='http://qt-project.org'
+license=('LGPL')
+depends=('qt5-quick1' 'qt5-tools' 'qt5-quickcontrols')
+makedepends=('git')
+options=('docs')
+optdepends=('qt5-doc: for the integrated Qt documentation'
+            'gdb: for the debugger'
+            'cmake: for cmake project support'
+            'openssh-askpass: for ssh support'
+            'git: for git support'
+            'mercurial: for mercurial support'
+            'bzr: for bazaar support'
+            'valgrind: for analyze support')
+install=qtcreator.install
+source=("git://gitorious.org/qt-creator/qt-creator.git#tag=v${_pkgver}"
+        "git://gitorious.org/qt-labs/qbs.git"
+        'qtcreator.desktop'
+        'botan-upgrade.patch')
+md5sums=('SKIP'
+         'SKIP'
+         '50880836fd62ccd87550940feb995f06'
+         '7d71e58bdb7a918adb779b0e527fbba5')
+
+prepare() {
+    cd qt-creator
+    git submodule init
+    git config submodule.qbs.url $srcdir/qbs
+    git submodule update
+    patch -p1 -i "${srcdir}"/botan-upgrade.patch
+}
+
+build() {
+  [[ -d build ]] && rm -r build
+  mkdir build && cd build
+
+  qmake ../qt-creator/qtcreator.pro
+  make
+  make docs -j1
+}
+
+package() {
+  cd build
+
+  make INSTALL_ROOT="${pkgdir}/usr/" install
+  make INSTALL_ROOT="${pkgdir}/usr/" install_docs
+
+  install -Dm644 ${srcdir}/qtcreator.desktop ${pkgdir}/usr/share/applications/qtcreator.desktop
+  install -Dm644 ${srcdir}/qt-creator/LGPL_EXCEPTION.TXT ${pkgdir}/usr/share/licenses/qtcreator/LGPL_EXCEPTION.TXT
+}

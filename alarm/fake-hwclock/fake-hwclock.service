@@ -1,0 +1,13 @@
+[Unit]
+Description=Saves time on shutdown and sets it at boot.
+After=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/systemd/scripts/fake-hwclock.sh set
+ExecStop=/usr/lib/systemd/scripts/fake-hwclock.sh save
+RemainAfterExit=true
+
+[Install]
+WantedBy=sysinit.target
+

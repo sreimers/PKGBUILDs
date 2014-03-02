@@ -4,12 +4,12 @@
 buildarch=4
 
 pkgbase=linux-odroid-xu
-_commit=23da8fa2ac5d00b1dfb84eac957b99af37565410
+_commit=89afccf8a33ee98679e8235aee5b957986158916
 _srcname=linux-${_commit}
 _kernelname=${pkgbase#linux}
 _desc="ODROID-XU"
-pkgver=3.4.5
-pkgrel=3
+pkgver=3.4.76
+pkgrel=2
 arch=('armv7h')
 url="http://www.kernel.org/"
 license=('GPL2')
@@ -17,8 +17,8 @@ makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git')
 options=('!strip')
 source=("https://github.com/hardkernel/linux/archive/${_commit}.tar.gz"
         'config')
-md5sums=('212b538811e1d2fd74f6cfe0e97d6c64'
-         '6c9e3922a419ecce1dce84789e5c88f7')
+md5sums=('575988f97a70f2a9a6391b5e8353bed9'
+         'e5600b6f4343aaab17cb8a0341da1e6a')
 
 prepare() {
   cd "${srcdir}/${_srcname}"
@@ -34,6 +34,8 @@ prepare() {
 
 build() {
   cd "${srcdir}/${_srcname}"
+
+  LDFLAGS=""
 
   # get kernel version
   make prepare

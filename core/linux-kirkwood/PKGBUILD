@@ -1,68 +1,65 @@
 # Maintainer: Mike Staszel <mikestaszel@plugapps.com>
 # Maintainer: Kevin Mihelich <kevin@plugapps.com>
+# Maintainer: Oleg Rakhmanov <orakhmanov@gmail.com>
 
 buildarch=2
 
 pkgbase=linux-kirkwood
-pkgname=('linux-kirkwood' 'linux-headers-kirkwood')
-#pkgname=linux-test       # Build kernel with a different name
-_kernelname=${pkgname#linux}
-_basekernel=3.11.6
-pkgver=${_basekernel}
+_kernelname=${pkgbase#linux}
+_desc="Marvell Kirkwood"
+pkgver=3.13.5
 pkgrel=1
-cryptover=1.6
-bfqver=v6r2
+cryptodev_commit=57b5544de80db85c8955499831fdaa30829db77a
+bfqver=v7r2
 uksmver="0.1.2.2"
-uksmname="v3.10"
+uksmname="v3.13"
 
 arch=('arm')
 url="http://www.kernel.org/"
 license=('GPL2')
-makedepends=('xmlto' 'docbook-xsl' 'uboot-mkimage' 'bc' 'git')
+makedepends=('xmlto' 'docbook-xsl' 'uboot-mkimage' 'kmod' 'inetutils' 'bc' 'git')
 options=('!strip')
-source=("ftp://ftp.kernel.org/pub/linux/kernel/v3.x/linux-${_basekernel}.tar.xz"
+
+source=("ftp://ftp.kernel.org/pub/linux/kernel/v3.x/linux-${pkgver}.tar.xz"
         'archlinuxarm.patch'
         'config'
         'mach-types::http://www.arm.linux.org.uk/developer/machines/download.php'
         'change-default-console-loglevel.patch'
         'usb-add-reset-resume-quirk-for-several-webcams.patch'
-        "http://download.gna.org/cryptodev-linux/cryptodev-linux-${cryptover}.tar.gz"
-	"http://kerneldedup.org/download/uksm/${uksmver}/uksm-${uksmver}-for-${uksmname}.patch"
-	"http://algo.ing.unimo.it/people/paolo/disk_sched/patches/$(echo $_basekernel |cut -c 1-4).0-${bfqver}/0001-block-cgroups-kconfig-build-bits-for-BFQ-${bfqver}-$(echo $_basekernel | cut -c 1-4).patch"
-	"http://algo.ing.unimo.it/people/paolo/disk_sched/patches/$(echo $_basekernel |cut -c 1-4).0-${bfqver}/0002-block-introduce-the-BFQ-${bfqver}-I-O-sched-for-$(echo $_basekernel |cut -c 1-4).patch"
-	"http://algo.ing.unimo.it/people/paolo/disk_sched/patches/$(echo $_basekernel |cut -c 1-4).0-${bfqver}/0003-block-bfq-add-Early-Queue-Merge-EQM-to-BFQ-${bfqver}-for-$(echo $_basekernel |cut -c 1-4).0.patch")
+        "git://git.code.sf.net/p/aufs/aufs3-standalone#branch=aufs${pkgver:0:4}"
+        "https://github.com/cryptodev-linux/cryptodev-linux/archive/${cryptodev_commit}.tar.gz"
+        "http://kerneldedup.org/download/uksm/${uksmver}/uksm-${uksmver}-for-${uksmname}.patch"
+        "http://algo.ing.unimo.it/people/paolo/disk_sched/patches/${pkgver:0:4}.0-${bfqver}/0001-block-cgroups-kconfig-build-bits-for-BFQ-${bfqver}-${pkgver:0:4}.patch"
+        "http://algo.ing.unimo.it/people/paolo/disk_sched/patches/${pkgver:0:4}.0-${bfqver}/0002-block-introduce-the-BFQ-${bfqver}-I-O-sched-for-${pkgver:0:4}.patch"
+        "http://algo.ing.unimo.it/people/paolo/disk_sched/patches/${pkgver:0:4}.0-${bfqver}/0003-block-bfq-add-Early-Queue-Merge-EQM-to-BFQ-${bfqver}-for-${pkgver:0:4}.0.patch")
 
-md5sums=('7e92ca268b71c35a00ebcca884300a83'
-         '00837ef51c35627274d6d07bf8c43b4e'
-         'e59583f2dcf84b6570681ea69e35de10'
+md5sums=('b9fa20262a7ecbbc3277aa2ee10412da'
+         '1c87cbbc3355eb8741143b4595d0bb5e'
+         '94cd91273bffe330fc8bc4cb2dd4ce9b'
          'SKIP'
          '65d5a4f313310bb2a732d022d51ea7e7'
          '9b5a265440abf57d2052838f31486a3a'
-         'eade38998313c25fd7934719cdf8a2ea'
-	 '4089a51c706f1ca00acfc55829b4dffb'
-         '0f8ad72666ad5e94b50df49f79d36021'
-         'c92242aebf31b636ba897f95aa7a0179'
-         'dcd7dba7d106429f05446e5f906efcbb')
+         'SKIP'
+         'a59f78f0a34cfe321921265246a7b725'
+         '36d74b349f4c0e97dd5e5b91b8a1d750'
+         'af879e680d2b723284bed9c660d9bba8'
+         '64b67eb8d84c94fc3929cceaf8d37895'
+         '5c6962340e5617086f4bb9513918bd08')
 
-build() {
-msg "Patches"
-msg2 "Getting aufs3 patches and copying into the kernel source tree"
-  git clone --branch aufs$(echo $_basekernel |cut -c 1-4) --depth=1 git://git.code.sf.net/p/aufs/aufs3-standalone
-  ### Use the line below only for rc kernels.
-  #git clone --branch aufs3.x-rcN --depth=1 git://git.code.sf.net/p/aufs/aufs3-standalone
+prepare() {
+  cd "${srcdir}/linux-${pkgver}"
 
-  cp -ru "${srcdir}/aufs3-standalone/Documentation" "${srcdir}/linux-${_basekernel}/"
-  cp -ru "${srcdir}/aufs3-standalone/fs" "${srcdir}/linux-${_basekernel}/"
-  cp -ru "${srcdir}/aufs3-standalone/include/uapi/linux/aufs_type.h" "${srcdir}/linux-${_basekernel}/include/linux/"
-  cp -ru "${srcdir}/aufs3-standalone/include/uapi/linux/aufs_type.h" "${srcdir}/linux-${_basekernel}/include/uapi/linux/"
+msg2 "Copying aufs3 patches into the kernel source tree"
 
-  #cd into kernel tree
-  cd "${srcdir}/linux-${_basekernel}"
+  cp -ru "${srcdir}/aufs3-standalone/Documentation" "${srcdir}/linux-${pkgver}/"
+  cp -ru "${srcdir}/aufs3-standalone/fs" "${srcdir}/linux-${pkgver}/"
+  cp -ru "${srcdir}/aufs3-standalone/include/uapi/linux/aufs_type.h" "${srcdir}/linux-${pkgver}/include/linux/"
+  cp -ru "${srcdir}/aufs3-standalone/include/uapi/linux/aufs_type.h" "${srcdir}/linux-${pkgver}/include/uapi/linux/"
 
 msg2 "Applying aufs3 patches"
   patch -Np1 -i ../aufs3-standalone/aufs3-kbuild.patch
   patch -Np1 -i ../aufs3-standalone/aufs3-base.patch
-  patch -Np1 -i ../aufs3-standalone/aufs3-proc_map.patch
+  patch -Np1 -i ../aufs3-standalone/aufs3-mmap.patch
   patch -Np1 -i ../aufs3-standalone/aufs3-standalone.patch
 
 msg2 "Add the USB_QUIRK_RESET_RESUME for several webcams"
@@ -77,27 +74,21 @@ msg2 "Add UKSM patch"
   patch -Np1 -i "${srcdir}/uksm-${uksmver}-for-${uksmname}.patch"
 
 msg2 "Add BFQ patches"
-  patch -Np1 -i "${srcdir}/0001-block-cgroups-kconfig-build-bits-for-BFQ-${bfqver}-$(echo $_basekernel | cut -c 1-4).patch"
-  patch -Np1 -i "${srcdir}/0002-block-introduce-the-BFQ-${bfqver}-I-O-sched-for-$(echo $_basekernel |cut -c 1-4).patch"
-  patch -Np1 -i "${srcdir}/0003-block-bfq-add-Early-Queue-Merge-EQM-to-BFQ-${bfqver}-for-$(echo $_basekernel |cut -c 1-4).0.patch"  
+  patch -Np1 -i "${srcdir}/0001-block-cgroups-kconfig-build-bits-for-BFQ-${bfqver}-${pkgver:0:4}.patch"
+  patch -Np1 -i "${srcdir}/0002-block-introduce-the-BFQ-${bfqver}-I-O-sched-for-${pkgver:0:4}.patch"
+  patch -Np1 -i "${srcdir}/0003-block-bfq-add-Early-Queue-Merge-EQM-to-BFQ-${bfqver}-for-${pkgver:0:4}.0.patch"  
 
-  # add latest fixes from stable queue, if needed
-  # http://git.kernel.org/?p=linux/kernel/git/stable/stable-queue.git
-
-  # set DEFAULT_CONSOLE_LOGLEVEL to 4 (same value as the 'quiet' kernel param)
-  # remove this when a Kconfig knob is made available by upstream
-  # (relevant patch sent upstream: https://lkml.org/lkml/2011/7/26/227)
-msg2 "Change default loglevel"
-  patch -Np1 -i "${srcdir}/change-default-console-loglevel.patch"
-
-msg "Prepare to build"
   cat "${srcdir}/config" > ./.config
 
-  # set extraversion to pkgrel
-  sed -ri "s|^(EXTRAVERSION =).*|\1 -${pkgrel}|" Makefile
+  # add pkgrel to extraversion
+  sed -ri "s|^(EXTRAVERSION =)(.*)|\1 \2-${pkgrel}|" Makefile
 
   # don't run depmod on 'make install'. We'll do this ourselves in packaging
   sed -i '2iexit 0' scripts/depmod.sh
+}
+
+build() {
+  cd "${srcdir}/linux-${pkgver}"
 
   # get kernel version
   make prepare
@@ -111,7 +102,7 @@ msg "Prepare to build"
   # ... or manually edit .config
 
   # Copy back our configuration (use with new kernel version)
-  #cp ./.config ../${_basekernel}.config
+  #cp ./.config ../${pkgbase}.config
 
   ####################
   # stop here
@@ -125,25 +116,28 @@ msg "Prepare to build"
 msg "Building!"
   make ${MAKEFLAGS} uImage modules
 
-msg "Build cryptodev module"
-  cd "${srcdir}/cryptodev-linux-${cryptover}"
-  make KERNEL_DIR="${srcdir}/linux-${_basekernel}"
+msg "Building cryptodev module"
+  cd "${srcdir}/cryptodev-linux-${cryptodev_commit}"
+  make KERNEL_DIR="${srcdir}/linux-${pkgver}"
 }
 
-package_linux-kirkwood() {
-  pkgdesc="The Linux Kernel and modules - Marvell Kirkwood"
-  depends=('coreutils' 'linux-firmware' 'module-init-tools>=3.16' 'mkinitcpio>=0.7')
+_package() {
+  pkgdesc="The Linux Kernel and modules - ${_desc}"
+  depends=('coreutils' 'linux-firmware' 'kmod' 'mkinitcpio>=0.7')
   optdepends=('crda: to set the correct wireless channels of your country')
-  provides=('kernel26' 'aufs_friendly' 'cryptodev_friendly' 'linux=${pkgver}')
-  conflicts=('linux')
+  provides=('kernel26' 'linux=${pkgver}' 'aufs_friendly' 'cryptodev_friendly')
+  conflicts=('linux-kirkwood-dt' 'linux' 'linux-olinuxino')
   install=${pkgname}.install
 
-  cd "${srcdir}/linux-${_basekernel}"
+  cd "${srcdir}/linux-${pkgver}"
 
   KARCH=arm
 
   # get kernel version
   _kernver="$(make kernelrelease)"
+  #_basekernel=${_kernver%%-*}
+  #_basekernel=${_basekernel%.*}
+  _basekernel=${pkgver}
 
   mkdir -p "${pkgdir}"/{lib/modules,lib/firmware,boot}
   make INSTALL_MOD_PATH="${pkgdir}" modules_install
@@ -168,10 +162,10 @@ package_linux-kirkwood() {
   echo "${_kernver}" > "${pkgdir}/lib/modules/extramodules-${_basekernel}-${_kernelname:-ARCH}/version"
 
   # install cryptodev module
-  cd "${srcdir}/cryptodev-linux-${cryptover}"
-  make -C "${srcdir}/linux-${_basekernel}" INSTALL_MOD_PATH="${pkgdir}" SUBDIRS=`pwd` modules_install
+  cd "${srcdir}/cryptodev-linux-${cryptodev_commit}"
+  make -C "${srcdir}/linux-${pkgver}" INSTALL_MOD_PATH="${pkgdir}" SUBDIRS=`pwd` modules_install
 
-  cd "${srcdir}/linux-${_basekernel}"
+  cd "${srcdir}/linux-${pkgver}"
 
   # Now we call depmod...
   depmod -b "$pkgdir" -F System.map "$_kernver"
@@ -181,17 +175,18 @@ package_linux-kirkwood() {
   mv "$pkgdir/lib" "$pkgdir/usr"
 }
 
-package_linux-headers-kirkwood() {
-  pkgdesc="Header files and scripts for building modules for linux kernel - Marvell Kirkwood"
-  provides=('kernel26-headers' 'linux-headers=${pkgver}')
-  conflicts=('kernel26-headers' 'linux-headers')
+_package-headers() {
+  pkgdesc="Header files and scripts for building modules for linux kernel - ${_desc}"
+  provides=('linux-headers=${pkgver}')
+  conflicts=('linux-headers-kirkwood-dt' 'linux-headers' 'linux-headers-olinuxino')
+  replaces=('linux-headers-kirkwood')
 
   install -dm755 "${pkgdir}/usr/lib/modules/${_kernver}"
 
   cd "${pkgdir}/usr/lib/modules/${_kernver}"
   ln -sf ../../../src/linux-${_kernver} build
 
-  cd "${srcdir}/linux-${_basekernel}"
+  cd "${srcdir}/linux-${pkgver}"
   install -D -m644 Makefile \
     "${pkgdir}/usr/src/linux-${_kernver}/Makefile"
   install -D -m644 kernel/Makefile \
@@ -200,10 +195,6 @@ package_linux-headers-kirkwood() {
     "${pkgdir}/usr/src/linux-${_kernver}/.config"
 
   mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/include"
-  make headers_install INSTALL_HDR_PATH="${pkgdir}/usr/src/linux-${_kernver}"
-
-# Clean up unneeded files
-#  find "${pkgdir}" -name "..install.cmd" -delete
 
   for i in acpi asm-generic config crypto drm generated linux math-emu \
     media net pcmcia scsi sound trace uapi video xen; do
@@ -211,12 +202,12 @@ package_linux-headers-kirkwood() {
   done
 
   # copy arch includes for external modules
-  mkdir -p ${pkgdir}/usr/src/linux-${_kernver}/arch/arm
-  cp -a arch/arm/include ${pkgdir}/usr/src/linux-${_kernver}/arch/arm/
-  mkdir -p ${pkgdir}/usr/src/linux-${_kernver}/arch/arm/mach-kirkwood   
-  cp -a arch/arm/mach-kirkwood/include ${pkgdir}/usr/src/linux-${_kernver}/arch/arm/mach-kirkwood/
-  mkdir -p ${pkgdir}/usr/src/linux-${_kernver}/arch/arm/plat-orion
-  cp -a arch/arm/plat-orion/include ${pkgdir}/usr/src/linux-${_kernver}/arch/arm/plat-orion/
+  mkdir -p ${pkgdir}/usr/src/linux-${_kernver}/arch/$KARCH
+  cp -a arch/$KARCH/include ${pkgdir}/usr/src/linux-${_kernver}/arch/$KARCH/
+  mkdir -p ${pkgdir}/usr/src/linux-${_kernver}/arch/$KARCH/mach-kirkwood
+  cp -a arch/$KARCH/mach-kirkwood/include ${pkgdir}/usr/src/linux-${_kernver}/arch/$KARCH/mach-kirkwood/
+  mkdir -p ${pkgdir}/usr/src/linux-${_kernver}/arch/$KARCH/plat-orion
+  cp -a arch/$KARCH/plat-orion/include ${pkgdir}/usr/src/linux-${_kernver}/arch/$KARCH/plat-orion/
 
   # copy files necessary for later builds, like nvidia and vmware
   cp Module.symvers "${pkgdir}/usr/src/linux-${_kernver}"
@@ -226,28 +217,28 @@ package_linux-headers-kirkwood() {
   chmod og-w -R "${pkgdir}/usr/src/linux-${_kernver}/scripts"
   mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/.tmp_versions"
 
-  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/arch/arm/kernel"
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/arch/${KARCH}/kernel"
 
-  cp arch/arm/Makefile "${pkgdir}/usr/src/linux-${_kernver}/arch/arm/"
+  cp arch/${KARCH}/Makefile "${pkgdir}/usr/src/linux-${_kernver}/arch/${KARCH}/"
 
-  cp arch/arm/kernel/asm-offsets.s "${pkgdir}/usr/src/linux-${_kernver}/arch/arm/kernel/"
+  cp arch/${KARCH}/kernel/asm-offsets.s "${pkgdir}/usr/src/linux-${_kernver}/arch/${KARCH}/kernel/"
 
- # add headers for lirc package
+  # add headers for lirc package
   # pci
   for i in bt8xx cx88 saa7134; do
-mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/pci/${i}"
+    mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/pci/${i}"
     cp -a drivers/media/pci/${i}/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/pci/${i}"
   done
   # usb
   for i in cpia2 em28xx pwc sn9c102; do
-mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/usb/${i}"
+    mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/usb/${i}"
     cp -a drivers/media/usb/${i}/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/usb/${i}"
   done
   # i2c
   mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c"
-  cp drivers/media/i2c/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/"
+  cp drivers/media/i2c/*.h  "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/"
   for i in cx25840; do
-mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/${i}"
+    mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/${i}"
     cp -a drivers/media/i2c/${i}/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/${i}"
   done
 
@@ -255,7 +246,7 @@ mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/${i}"
   install -D -m644 Documentation/DocBook/Makefile \
     "${pkgdir}/usr/src/linux-${_kernver}/Documentation/DocBook/Makefile"
 
-# add dm headers
+  # add dm headers
   mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/md"
   cp drivers/md/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/md"
 
@@ -282,7 +273,7 @@ mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/${i}"
   # http://bugs.archlinux.org/task/13146
   mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-frontends/"
   cp drivers/media/dvb-frontends/lgdt330x.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-frontends/"
-  #cp drivers/media/i2c/msp3400-driver.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/"
+  cp drivers/media/i2c/msp3400-driver.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/"
 
   # add dvb headers
   # in reference to:
@@ -304,7 +295,7 @@ mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/${i}"
     mkdir -p "${pkgdir}"/usr/src/linux-${_kernver}/`echo ${i} | sed 's|/Kconfig.*||'`
     cp ${i} "${pkgdir}/usr/src/linux-${_kernver}/${i}"
   done
-  
+
   chown -R root.root "${pkgdir}/usr/src/linux-${_kernver}"
   find "${pkgdir}/usr/src/linux-${_kernver}" -type d -exec chmod 755 {} \;
 
@@ -324,6 +315,13 @@ mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/${i}"
   rm -rf "${pkgdir}"/usr/src/linux-${_kernver}/arch/{alpha,arm26,avr32,blackfin,cris,frv,h8300,ia64,m32r,m68k,m68knommu,mips,microblaze,mn10300,parisc,powerpc,ppc,s390,sh,sh64,sparc,sparc64,um,v850,x86,xtensa}
 
   # install cryptodev header
-  cd "${srcdir}/cryptodev-linux-${cryptover}"
+  cd "${srcdir}/cryptodev-linux-${cryptodev_commit}"
   install -D crypto/cryptodev.h "${pkgdir}/usr/src/linux-${_kernver}/crypto/cryptodev.h"
 }
+
+pkgname=("${pkgbase}" "${pkgbase}-headers")
+for _p in ${pkgname[@]}; do
+  eval "package_${_p}() {
+    _package${_p#${pkgbase}}
+  }"
+done

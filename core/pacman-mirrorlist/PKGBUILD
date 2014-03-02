@@ -1,20 +1,18 @@
 # Maintainer: Kevin Mihelich <kevin@archlinuxarm.org>
 
 pkgname=pacman-mirrorlist
-pkgver=20130919
+pkgver=20140220
 pkgrel=1
 pkgdesc="Arch Linux ARM mirror list for use by pacman"
 arch=('arm' 'armv6h' 'armv7h')
-url="http://www.archlinux.org/pacman/"
+url="http://www.archlinuxarm.org/about/mirrors"
 license=('GPL')
 groups=('base')
 backup=(etc/pacman.d/mirrorlist)
 source=(mirrorlist)
-md5sums=('0b0ec14e4b927c957cc8d93ee2dba31e')
+md5sums=('3f8a00120a4ea88e4922801d609390a3')
 
 build() {
   mkdir -p $pkgdir/etc/pacman.d
   install -m644 $srcdir/mirrorlist $pkgdir/etc/pacman.d/
-  # customize mirrorlist to architecture
-  sed -i -e "s/@carch@/${CARCH}/g" $pkgdir/etc/pacman.d/mirrorlist
 }

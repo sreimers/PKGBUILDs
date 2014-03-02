@@ -4,30 +4,48 @@
 buildarch=2
 
 pkgbase=linux-armv5
-_srcname=linux-3.12-rc2
+_srcname=linux-3.13
 _kernelname=${pkgbase#linux}
 _desc="ARMv5 based platforms"
-pkgver=3.12.0
-pkgrel=1
+pkgver=3.13.5
+pkgrel=2
 arch=('armv7h')
 url="http://www.kernel.org/"
 license=('GPL2')
-makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc')
+makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git')
 options=('!strip')
-source=("http://www.kernel.org/pub/linux/kernel/v3.x/testing/${_srcname}.tar.xz"
+source=("http://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
+        "http://www.kernel.org/pub/linux/kernel/v3.x/patch-${pkgver}.xz"
+        "git://git.code.sf.net/p/aufs/aufs3-standalone#branch=aufs${_srcname#linux-}"
         'config'
-        'imx23-olinuxino.patch')
-md5sums=('a55358abfc6017328b65a08277f33429'
-         '1938db9cfbd41cee0701c483c60c81f8'
-         '4424a769ce79478e8d71e288b61f368f')
+        'imx23-olinuxino.patch'
+        'gpio-clamp.patch')
+md5sums=('0ecbaf65c00374eb4a826c2f9f37606f'
+         '114c391a592131f1c12544e063173a45'
+         'SKIP'
+         'd277d406b1c488d7b26c0cf150afceb4'
+         'c3abaa939372af7a07ae5c2196263110'
+         'eb02814c2c46d5a8cf81361bbab9abbd')
 
 prepare() {
   cd "${srcdir}/${_srcname}"
 
   # add upstream patch
-#  patch -p1 -i "${srcdir}/patch-${pkgver}"
+  patch -Np1 -i "${srcdir}/patch-${pkgver}"
 
-  patch -p1 -i "${srcdir}/imx23-olinuxino.patch"
+  patch -Np1 -i "${srcdir}/imx23-olinuxino.patch"
+  patch -Np1 -i "${srcdir}/gpio-clamp.patch"
+
+  # AUFS patches
+  cp -ru "${srcdir}/aufs3-standalone/Documentation" .
+  cp -ru "${srcdir}/aufs3-standalone/fs" .
+  cp -ru "${srcdir}/aufs3-standalone/include/uapi/linux/aufs_type.h" ./include/linux
+  cp -ru "${srcdir}/aufs3-standalone/include/uapi/linux/aufs_type.h" ./include/uapi/linux
+
+  patch -Np1 -i ../aufs3-standalone/aufs3-kbuild.patch
+  patch -Np1 -i ../aufs3-standalone/aufs3-base.patch
+  patch -Np1 -i ../aufs3-standalone/aufs3-mmap.patch
+  patch -Np1 -i ../aufs3-standalone/aufs3-standalone.patch
 
   cat "${srcdir}/config" > ./.config
 

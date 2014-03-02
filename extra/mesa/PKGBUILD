@@ -9,7 +9,7 @@
 
 pkgbase=mesa
 pkgname=('mesa' 'mesa-libgl')
-pkgver=9.2.2
+pkgver=10.0.3
 pkgrel=1
 arch=('i686' 'x86_64')
 makedepends=('python2' 'libxml2' 'libx11' 'glproto' 'libdrm' 'dri2proto' 'libxxf86vm' 'libxdamage'
@@ -19,7 +19,7 @@ license=('custom')
 options=('!libtool')
 source=(ftp://ftp.freedesktop.org/pub/mesa/${pkgver}/MesaLib-${pkgver}.tar.bz2
         LICENSE)
-md5sums=('20887f8020db7d1736a01ae9cd5d8c38'
+md5sums=('5f9f463ef08129f6762106b434910adb'
          '5c65a0fe315dd347e09b1f2826a1df5a')
 
 build() {
@@ -67,6 +67,7 @@ package_mesa() {
   mv -v ${srcdir}/fakeinstall/* ${pkgdir}
   # rename libgl.so to not conflict with blobs - may break gl.pc ?
   mv ${pkgdir}/usr/lib/libGL.so.1.2.0 	${pkgdir}/usr/lib/mesa-libGL.so.1.2.0
+  ln -s mesa-libGL.so.1.2.0 ${pkgdir}/usr/lib/mesa-libGL.so.1
   rm ${pkgdir}/usr/lib/libGL.so{,.1}
 
   install -m755 -d "${pkgdir}/usr/share/licenses/mesa"
